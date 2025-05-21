@@ -1,0 +1,129 @@
+
+/// ***************************
+/// Main Running Configurations
+/// ***************************
+
+allprojects {
+    apply plugin: "java"
+
+    //sourceCompatibility = JavaVersion.VERSION_17
+    //targetCompatibility = JavaVersion.VERSION_17
+
+    java{
+        sourceCompatibility = JavaVersion.VERSION_17
+    }
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://org.locationtech.spatial4j"
+        }
+        maven {
+            url "https://commons.codec"
+        }
+        maven {
+            url "https://fasterxml.jackson.core.databind"
+        }
+        maven {
+            url "https://io.javalin"
+        }
+        maven {
+            url "https://junit.jupiter"
+        }
+        maven {
+            url "https://slf4j.simple"
+        }
+    }
+
+    dependencies {
+        implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+        testImplementation group: "junit", name: "junit", version: "4.13"
+        testImplementation group: "org.hamcrest", name: "hamcrest-core", version: "1.3"
+        testImplementation group: "org.hamcrest", name: "hamcrest-all", version: "1.3"
+        implementation ('commons-codec:commons-codec:1.16.1')
+        implementation ('com.fasterxml.jackson.core:jackson-databind:2.16.1')
+        implementation ('io.javalin:javalin:6.1.3')
+        implementation ('org.junit.jupiter:junit-jupiter:5.10.2')
+        implementation ('org.locationtech.spatial4j:spatial4j:0.8')
+        implementation ('org.slf4j:slf4j-simple:2.0.12')
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    javadoc {
+        options.tags = [
+            "spec.modifies:a:Modifies:",
+            "spec.effects:a:Effects:",
+            "spec.requires:a:Requires:",
+            "spec.specfield:a:Specfield:",
+            "spec.derivedfield:a:Derived Field:"
+        ]
+    }
+
+    compileJava {
+        options.encoding = "UTF-8"
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Werror"
+    }
+
+    compileTestJava {
+        options.encoding = "UTF-8"
+        options.compilerArgs << "-Xlint:unchecked" << "-Werror"
+    }
+}
+
+/// ********************
+/// Testing + Assertions
+/// ********************
+
+allprojects {
+    // We use assertions in checkReps, so enable them everywhere
+    tasks.withType(JavaExec) {
+        enableAssertions = true
+    }
+
+    tasks.withType(Test) {
+        enableAssertions = true
+    }
+
+    // Print out lots of info about tests to aid in debugging
+    test {
+        testLogging {
+            events "failed", "skipped"
+            setShowStandardStreams true
+            setShowExceptions true
+            exceptionFormat "full"
+        }
+    }
+}
+
+/// ****************
+/// Additional Tasks
+/// ****************
+
+allprojects {
+    task validate {
+        group = "homework"
+        description = "Validate the working copy. Ensures that the project builds, a javadoc is generated, and student tests run."
+        dependsOn clean
+        dependsOn compileJava
+        dependsOn compileTestJava
+        dependsOn javadoc
+        dependsOn test
+    }
+
+    task cleanByRenaming {
+        description = 'Use this when the "clean" target fails due to "unable to delete file" "device or resource busy".'
+        doLast {
+            File destinationDir = new File("${buildDir}", "deleteme-" + new Random().nextInt(1000000))
+            mkdir destinationDir
+            println "destinationDir = " + destinationDir
+            buildDir.eachFile { f ->
+                println "Processing " + f
+                f.renameTo(new File(destinationDir, f.getName()))
+            }
+        }
+    }
+}
+
